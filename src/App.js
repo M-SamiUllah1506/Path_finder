@@ -35,7 +35,7 @@ function App() {
       <section className="features">
         <div className="feature">
           <h3>Visual Algorithms</h3>
-          <p>Step through BFS, DFS, Dijkstra and A* with an interactive canvas.</p>
+          <p>Step through BFS, DFS, and Dijkstra with an interactive canvas.</p>
         </div>
         <div className="feature">
           <h3>Interactive Graphs</h3>
@@ -89,6 +89,18 @@ function App() {
     }
   };
 
+  // refs to child clear handlers
+  const vizClearRef = React.useRef(null);
+  const logClearRef = React.useRef(null);
+  const registerVisualizerClear = (fn) => { vizClearRef.current = fn; };
+  const registerLogisticsClear = (fn) => { logClearRef.current = fn; };
+
+  const handleClearAll = () => {
+    // call registered clear functions if present
+    try { vizClearRef.current && vizClearRef.current(); } catch (e) { /* ignore */ }
+    try { logClearRef.current && logClearRef.current(); } catch (e) { /* ignore */ }
+  };
+
   return (
     <div className="app-root">
       <nav className="top-nav">
@@ -96,6 +108,7 @@ function App() {
         <div className="nav-actions">
           <button onClick={() => navigateTo('visualizer')} className="link">Visualizer</button>
           <button onClick={() => navigateTo('logistics')} className="link">Logistics</button>
+          <button onClick={handleClearAll} className="clear-all">Clear All</button>
         </div>
       </nav>
 
@@ -139,13 +152,13 @@ function App() {
           {view === 'visualizer' && (
             <div style={{ padding: 12 }}>
               <button onClick={() => navigateTo('home')} className="back">← Back</button>
-              <Visualizer />
+              <Visualizer registerClear={registerVisualizerClear} />
             </div>
           )}
           {view === 'logistics' && (
             <div style={{ padding: 12 }}>
               <button onClick={() => navigateTo('home')} className="back">← Back</button>
-              <LogisticsApp />
+              <LogisticsApp registerClear={registerLogisticsClear} />
             </div>
           )}
         </div>

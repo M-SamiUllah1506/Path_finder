@@ -8,7 +8,7 @@ function ClickHandler({ onMapClick }) {
   return null;
 }
 
-export default function MapPanel({ graph, center = [30.3753, 69.3451], zoom = 6, onMapClick, route = [], selected = [], vehiclePosition = null, vehicleAngle = 0, onSelectNode, reached = new Set(), connected = new Set() }) {
+export default function MapPanel({ graph, center = [30.3753, 69.3451], zoom = 6, onMapClick, route = [], selected = [], vehiclePosition = null, vehicleAngle = 0, onSelectNode, reached = new Set(), connected = new Set(), selectedPairPath = [] }) {
   const nodes = graph.nodesArray();
   const edges = graph.edgesArray();
   // build a set of edge-pairs that belong to the current route for highlighting
@@ -32,19 +32,24 @@ export default function MapPanel({ graph, center = [30.3753, 69.3451], zoom = 6,
       {route.length > 1 && (
         <Polyline positions={route.map(id => { const n = graph.getNode(id); return [n.lat,n.lng]; })} color="#ff6b6b" weight={4} />
       )}
+      {/* selected pair path highlighted in green */}
+      {selectedPairPath && selectedPairPath.length > 1 && (
+        <Polyline positions={selectedPairPath.map(id => { const n = graph.getNode(id); return [n.lat,n.lng]; })} color="#2e7d32" weight={4} />
+      )}
 
       {nodes.map(n => (
         <CircleMarker
           key={n.id}
           center={[n.lat,n.lng]}
           radius={selected.includes(n.id) ? 10 : 6}
-          color={reached.has(n.id) ? '#2e7d32' : (connected.has(n.id) ? '#d32f2f' : (selected.includes(n.id) ? '#ffd54f' : '#1976d2'))}
+          color={selectedPairPath && selectedPairPath.includes(n.id) ? '#2e7d32' : (reached.has(n.id) ? '#2e7d32' : (connected.has(n.id) ? '#d32f2f' : (selected.includes(n.id) ? '#ffd54f' : '#1976d2')))}
           eventHandlers={{ click: () => onSelectNode && onSelectNode(n.id) }}
         >
           <Popup>
             <div>Node {n.id}</div>
             {reached.has(n.id) && <div style={{ color: '#2e7d32', fontWeight: 'bold' }}>Reached</div>}
             {connected.has(n.id) && <div style={{ color: '#d32f2f', fontWeight: 'bold' }}>Connected</div>}
+            {selectedPairPath && selectedPairPath.includes(n.id) && <div style={{ color: '#2e7d32', fontWeight: 'bold' }}>Shortest Pair</div>}
           </Popup>
         </CircleMarker>
       ))}

@@ -11,6 +11,11 @@ function Controls({ graph, algorithm, setAlgorithm, start, setStart, goal, setGo
           <option value="dfs">DFS</option>
           <option value="dijkstra">Dijkstra</option>
         </select>
+        {(algorithm === 'bfs' || algorithm === 'dfs') && (
+          <div style={{ marginTop: 8, color: '#b45500', fontSize: 13 }}>
+            Note: BFS/DFS ignore edge weights and perform unweighted traversal. Use Dijkstra for weighted shortest paths.
+          </div>
+        )}
       </div>
 
       <div style={{ marginBottom: 8 }}>

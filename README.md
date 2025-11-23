@@ -1,32 +1,38 @@
-# 🍽️ Flavor Haven - React Food Ordering App
+# Path Finder
 
-**Flavor Haven** is a responsive and interactive food ordering application built with **React**. It features a stylish UI, dynamic cart system, and a modal-based checkout form with options for payment, tip, and suggestions.
+Path Finder is a small React project that provides interactive graph algorithm visualizations and a logistics dashboard for experimenting with routing and pathfinding.
 
-## 🚀 Features
+## Quick start
 
-- 🖼️ List of available meals with images, descriptions, and prices
-- 🛒 Dynamic Cart with real-time item updates
-- ➕ Add/Remove item quantities
-- 💳 Order form with payment method and tip input
-- 🎯 Smooth animations for cart button bump effect
-- 📦 Uses React Context API for global cart state management
-- 💡 Simple, reusable components (Card, Modal, Input, etc.)
+Install dependencies and run the dev server:
 
-## 🧪 Technologies Used
+```bash
+npm install
+npm start
+```
 
-- ⚛️ React (with hooks)
-- 🎨 CSS Modules for styling
-- 🧠 React Context API for global state
-- 🧰 useReducer for managing cart logic
-- 📁 Modular file structure
+Open your browser to `http://localhost:3000`.
 
-## 🖼️ Screenshots
+## What’s included
 
-<img width="1917" height="991" alt="image" src="https://github.com/user-attachments/assets/1e5f8f3d-e371-48b0-8b05-cff213b76c17" />
+- Visualizer: interactive graph canvas to add nodes/edges and run BFS, DFS, and Dijkstra with animated traversal.
+- Logistics Dashboard: sample geographic graph, route computation, and vehicle animation for routes.
+- Landing page with onboarding, help modal, and smooth view transitions.
 
+## Notes about algorithms
 
-<img width="1917" height="916" alt="image" src="https://github.com/user-attachments/assets/56e30a7d-4d01-4af2-ad44-282da2553c56" />
+- Only BFS, DFS and Dijkstra are available. BFS/DFS perform unweighted graph traversals and will ignore edge weights; use Dijkstra to compute shortest paths that respect edge weights.
 
-<img width="1920" height="913" alt="image" src="https://github.com/user-attachments/assets/fa6d74c0-0be7-4350-b179-b0ef4ea127ba" />
+## Recent changes
 
-<img width="466" height="527" alt="image" src="https://github.com/user-attachments/assets/368a8ea1-9baf-47bc-9474-163740eb1c7a" />
+- Removed A* and Nearest-Neighbor algorithms to streamline the project and focus on BFS, DFS, and Dijkstra.
+- Added onboarding overlay and a floating Help modal.
+- Improved landing page styling, animations, and URL sync for views.
+
+## Next steps (ideas)
+
+- Add `react-router` for full routing and deep links.
+- Replace the hero SVG with an illustration or Lottie animation.
+- Add step-by-step onboarding tooltips for more guided tours.
+
+If you'd like me to add any of these, tell me which one and I’ll implement it.

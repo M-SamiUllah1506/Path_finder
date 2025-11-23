@@ -3,11 +3,11 @@ import GraphGeo, { haversine } from './GraphGeo';
 import MapPanel from './MapPanel';
 import Controls from './Controls';
 import { dijkstra } from './algorithms/dijkstra';
-import { astar } from './algorithms/astar';
-import { nearestNeighbor } from './algorithms/nearestNeighbor';
+import { bfs } from '../visualizer/algorithms/bfs';
+import { dfs } from '../visualizer/algorithms/dfs';
 import './Logistics.css';
 
-export default function LogisticsApp({ defaultCenter = [40.7128, -74.0060] }) {
+export default function LogisticsApp({ defaultCenter = [40.7128, -74.0060], registerClear }) {
   const graphRef = useRef(null);
   if (!graphRef.current) graphRef.current = new GraphGeo();
   const graph = graphRef.current;
@@ -52,6 +52,45 @@ export default function LogisticsApp({ defaultCenter = [40.7128, -74.0060] }) {
   const [routeSequence, setRouteSequence] = useState([]);
   const animRef = useRef({ running: false, cancel: false });
 
+  // pairwise selection analysis
+  const [pairDistances, setPairDistances] = useState([]);
+  const [selectedPairPath, setSelectedPairPath] = useState([]);
+
+  const analyzeSelection = () => {
+    const sel = selected.slice();
+    if (!sel || sel.length < 2) return;
+    const pairs = [];
+    for (let i = 0; i < sel.length; i++) {
+      for (let j = i + 1; j < sel.length; j++) {
+        const a = sel[i]; const b = sel[j];
+        const res = dijkstra(graph, a, b);
+        const dist = res.dist.get(b) || Infinity;
+        pairs.push({ a, b, dist: dist === Infinity ? null : dist, path: res.path || [] });
+      }
+    }
+    pairs.sort((x, y) => (x.dist === null ? Infinity : x.dist) - (y.dist === null ? Infinity : y.dist));
+    setPairDistances(pairs);
+    const firstFinite = pairs.find(p => p.dist !== null);
+    setSelectedPairPath(firstFinite ? firstFinite.path : []);
+  };
+
+  // clear everything: reset graph and UI state
+  const clearAll = () => {
+    // stop animation
+    animRef.current.cancel = true; animRef.current.running = false;
+    setRoute([]); setStats({ distance: 0 }); setVehiclePos(null); setVehicleAngle(0);
+    setSelected([]); setRouteSequence([]); setConnectedNodes(new Set()); setHistory([]);
+    setReachedNodes(new Set()); setPairDistances([]); setSelectedPairPath([]);
+    // reset graph model and prevent re-initialization
+    graphRef.current = new GraphGeo();
+    if (initialized) initialized.current = true; // avoid re-adding sample nodes
+  };
+
+  React.useEffect(() => {
+    if (registerClear) registerClear(clearAll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registerClear]);
+
   const onMapClick = ({ lat, lng }) => {
     const id = graph.addNode(lat, lng);
     setSelected([id]);
@@ -83,7 +122,7 @@ export default function LogisticsApp({ defaultCenter = [40.7128, -74.0060] }) {
       if (idx >= 0) {
         const copy = s.slice(); copy.splice(idx, 1); return copy;
       }
-      return [...s.slice(-1), id];
+      return [...s, id];
     });
   };
 
@@ -176,28 +215,30 @@ export default function LogisticsApp({ defaultCenter = [40.7128, -74.0060] }) {
         setRoute(path);
         setStats({ distance: bestd });
       }
-    } else if (algorithm === 'astar') {
-      // if a specific goal (selected or dropdown) is provided, run A*
+    } else if (algorithm === 'bfs' || algorithm === 'dfs') {
+      const fn = algorithm === 'bfs' ? bfs : dfs;
+      // if a specific goal (selected or dropdown) is provided, run selected traversal
       if (useGoal !== null && useGoal !== undefined && useGoal !== '') {
-        const res = astar(graph, useStart, useGoal);
+        const res = fn(graph, useStart, useGoal);
         setRoute(res.path || []);
-        let dist = 0; for (let i=0;i+1<res.path.length;i++) { const a = graph.getNode(res.path[i]); const b = graph.getNode(res.path[i+1]); dist += haversine(a.lat,a.lng,b.lat,b.lng); }
+        let dist = 0; for (let i=0;i+1<(res.path || []).length;i++) { const a = graph.getNode(res.path[i]); const b = graph.getNode(res.path[i+1]); dist += haversine(a.lat,a.lng,b.lat,b.lng); }
         setStats({ distance: dist });
       } else {
-        // no explicit goal: pick nearest other node as before
+        // no explicit goal: pick the geographically nearest other node and compute traversal path
         const nodes = graph.nodesArray().map(n => n.id).filter(id => id !== useStart);
         if (!nodes.length) return;
-        const computedGoal = nodes[0];
-        const res = astar(graph, useStart, computedGoal);
+        // choose nearest by haversine distance
+        let best = nodes[0]; let bestd = Infinity;
+        for (const id of nodes) {
+          const a = graph.getNode(useStart); const b = graph.getNode(id);
+          const d = haversine(a.lat, a.lng, b.lat, b.lng);
+          if (d < bestd) { bestd = d; best = id; }
+        }
+        const res = fn(graph, useStart, best);
         setRoute(res.path || []);
-        let dist = 0; for (let i=0;i+1<res.path.length;i++) { const a = graph.getNode(res.path[i]); const b = graph.getNode(res.path[i+1]); dist += haversine(a.lat,a.lng,b.lat,b.lng); }
+        let dist = 0; for (let i=0;i+1<(res.path || []).length;i++) { const a = graph.getNode(res.path[i]); const b = graph.getNode(res.path[i+1]); dist += haversine(a.lat,a.lng,b.lat,b.lng); }
         setStats({ distance: dist });
       }
-    } else if (algorithm === 'nn') {
-      const path = nearestNeighbor(graph, useStart);
-      let dist = 0; for (let i=0;i+1<path.length;i++) { const a = graph.getNode(path[i]); const b = graph.getNode(path[i+1]); dist += haversine(a.lat,a.lng,b.lat,b.lng); }
-      setRoute(path);
-      setStats({ distance: dist });
     }
   };
 
@@ -265,15 +306,34 @@ export default function LogisticsApp({ defaultCenter = [40.7128, -74.0060] }) {
   return (
     <div className="logistics-root">
       <div className="logistics-left">
-        <MapPanel graph={graph} center={defaultCenter} onMapClick={onMapClick} route={route} selected={selected} vehiclePosition={vehiclePos} vehicleAngle={vehicleAngle} onSelectNode={onSelectNode} reached={reachedNodes} connected={connectedNodes} />
+        <MapPanel graph={graph} center={defaultCenter} onMapClick={onMapClick} route={route} selected={selected} vehiclePosition={vehiclePos} vehicleAngle={vehicleAngle} onSelectNode={onSelectNode} reached={reachedNodes} connected={connectedNodes} selectedPairPath={selectedPairPath} />
       </div>
       <div className="logistics-right">
         <Controls graph={graph} algorithm={algorithm} setAlgorithm={setAlgorithm} start={start} setStart={setStart} goal={goal} setGoal={setGoal} onCompute={onCompute} addEdgeBetween={() => addEdgeBetween()} selected={selected} onAnimate={() => animateRoute()} onStep={() => stepOnce()} onReset={() => resetVehicle()} speed={speed} setSpeed={(v) => setSpeed(v)} connectMode={connectMode} setConnectMode={setConnectMode} connectStart={connectStart} />
+        <div style={{ padding: 12 }}>
+          <button onClick={analyzeSelection} disabled={selected.length < 2}>Analyze Selection</button>
+        </div>
         <div className="stats">
           <div><strong>Route distance (km):</strong> {stats.distance ? stats.distance.toFixed(2) : '—'}</div>
           <div><strong>Nodes:</strong> {graph.nodesArray().length}</div>
           <div><strong>Edges:</strong> {graph.edgesArray().length}</div>
           <div><strong>Animating:</strong> {animRef.current.running ? 'Yes' : 'No'}</div>
+        </div>
+        <div style={{ padding: 12 }}>
+          <h4>Selection Analysis</h4>
+          <div><strong>Selected nodes:</strong> {selected.length ? selected.join(', ') : '—'}</div>
+          <div style={{ marginTop: 8 }}>
+            {pairDistances.length === 0 ? <div>No pairwise distances computed. Select nodes on the map and click Analyze Selection.</div> : (
+              <div>
+                {pairDistances.map((p, idx) => (
+                  <div key={idx} style={{ marginBottom: 6 }}>
+                    <strong>{p.a} ↔ {p.b}:</strong> {p.dist === null ? 'No path' : `${p.dist.toFixed(2)} (weight)`}
+                  </div>
+                ))}
+                <div style={{ marginTop: 8 }}><strong>Shortest pair:</strong> {pairDistances[0] ? `${pairDistances[0].a} ↔ ${pairDistances[0].b} (${pairDistances[0].dist === null ? 'No path' : pairDistances[0].dist.toFixed(2)})` : '—'}</div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

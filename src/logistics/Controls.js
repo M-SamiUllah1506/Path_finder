@@ -8,9 +8,14 @@ export default function Controls({ graph, algorithm, setAlgorithm, start, setSta
         <label>Algorithm</label>
         <select value={algorithm} onChange={(e) => setAlgorithm(e.target.value)}>
           <option value="dijkstra">Dijkstra</option>
-          <option value="astar">A*</option>
-          <option value="nn">Nearest Neighbor</option>
+          <option value="bfs">BFS</option>
+          <option value="dfs">DFS</option>
         </select>
+        {(algorithm === 'bfs' || algorithm === 'dfs') && (
+          <div style={{ marginTop: 8, color: '#b45500', fontSize: 13 }}>
+            Note: BFS/DFS ignore edge weights and perform unweighted traversal. Use Dijkstra for shortest weighted routes.
+          </div>
+        )}
       </div>
 
       <div className="controls-row">
