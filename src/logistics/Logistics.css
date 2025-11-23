@@ -1,0 +1,17 @@
+.logistics-root {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+}
+.logistics-left {
+  flex: 1 1 auto;
+}
+.logistics-right {
+  width: 360px;
+  border-left: 1px solid #eee;
+  padding-left: 12px;
+}
+.controls-row { margin-bottom: 10px; }
+.stats { padding: 12px; font-size: 14px; }
+.alg-buttons { display: flex; gap: 8px; margin-bottom: 8px; }
+.vehicle-icon div { font-size: 20px; transform-origin: center; }

@@ -1,0 +1,15 @@
+.visualizer-root {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+}
+.visualizer-left {
+  flex: 1 1 auto;
+}
+.visualizer-right {
+  width: 320px;
+  border-left: 1px solid #eee;
+}
+.toolbar {
+  margin-bottom: 8px;
+}
